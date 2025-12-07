@@ -1,36 +1,42 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, googleProvider, db, isFirebaseConfigured } from '../firebase/config';
-import { Twitter, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { auth, twitterProvider, db, isFirebaseConfigured } from '../firebase/config';
+import { Twitter, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import AnimatedBackground from '../components/AnimatedBackground';
 import './Auth.css';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const twitterUsername = sessionStorage.getItem('twitterUsername');
+  const sessionUsername = sessionStorage.getItem('twitterUsername');
 
   // Notify extension about successful login
   const notifyExtension = (user) => {
+    // If we have a session username, prefer it, otherwise try to use screen_name from provider data if available
+    // Firebase Twitter Auth usually puts the handle in reloadUserInfo.screenName, but it's internal.
+    // user.reloadUserInfo.screenName
+    const handle = // Try to find handle in provider data
+       user.reloadUserInfo?.screenName || 
+       sessionUsername || 
+       '';
+
     const userData = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName || null,
-      photoURL: user.photoURL || null
+      photoURL: user.photoURL || null,
+      username: handle 
     };
     
-    // Save to localStorage for extension to pick up
+    // Save to localStorage
     localStorage.setItem('tw_user', JSON.stringify(userData));
-    if (twitterUsername) {
-      localStorage.setItem('tw_username', twitterUsername);
+    if (handle) {
+      localStorage.setItem('tw_username', handle);
     }
     
     // Send postMessage for immediate sync
@@ -38,38 +44,47 @@ const Auth = () => {
       type: 'TWITTER_WRAPPED_AUTH',
       data: {
         user: userData,
-        twitterUsername: twitterUsername || ''
+        twitterUsername: handle
       }
     }, window.location.origin);
-    
-    console.log('[Auth] Notified extension about login');
   };
 
   const saveUserData = async (user) => {
     if (!db) return;
     
+    // Attempt to extract handle from Firebase internal property (safe for Twitter provider)
+    // @ts-ignore
+    const twitterHandle = user.reloadUserInfo?.screenName || sessionUsername || '';
+
     try {
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
+      const payload = {
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        lastLogin: new Date().toISOString()
+      };
+
+      if (twitterHandle) {
+          payload.twitterUsername = twitterHandle;
+      }
+      
       if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          email: user.email,
-          twitterUsername: twitterUsername || '',
-          createdAt: new Date().toISOString(),
-          lastSync: null
-        });
-      } else if (twitterUsername && !userSnap.data().twitterUsername) {
-        await setDoc(userRef, { twitterUsername }, { merge: true });
+        payload.createdAt = new Date().toISOString();
+        await setDoc(userRef, payload);
+      } else {
+        await setDoc(userRef, payload, { merge: true });
       }
     } catch (error) {
       console.warn('Error saving user data:', error);
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleTwitterSignIn = async () => {
     if (!isFirebaseConfigured || !auth) {
-      setError('Firebase is not configured. Please add your Firebase credentials.');
+      setError('Firebase is not configured. Please add your config in .env');
       return;
     }
     
@@ -77,49 +92,21 @@ const Auth = () => {
     setError('');
     
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      await saveUserData(result.user);
-      notifyExtension(result.user);
+      const result = await signInWithPopup(auth, twitterProvider);
+      // The signed-in user info.
+      const user = result.user;
+      
+      await saveUserData(user);
+      notifyExtension(user);
       navigate('/dashboard');
     } catch (err) {
-      console.error('Google sign in error:', err);
-      setError('Failed to sign in with Google');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmailAuth = async (e) => {
-    e.preventDefault();
-    
-    if (!isFirebaseConfigured || !auth) {
-      setError('Firebase is not configured. Please add your Firebase credentials.');
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
-
-    try {
-      let result;
-      if (isLogin) {
-        result = await signInWithEmailAndPassword(auth, email, password);
+      console.error('Twitter sign in error:', err);
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        setError('An account already exists with the same email address but different sign-in credentials.');
+      } else if (err.code === 'auth/popup-closed-by-user') {
+          setError('Sign in cancelled.');
       } else {
-        result = await createUserWithEmailAndPassword(auth, email, password);
-      }
-      await saveUserData(result.user);
-      notifyExtension(result.user);
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Email auth error:', err);
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        setError('Invalid email or password');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Email already in use');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password must be at least 6 characters');
-      } else {
-        setError('An error occurred. Please try again.');
+        setError('Failed to sign in with Twitter. Please make sure "Twitter" is enabled in Firebase Console.');
       }
     } finally {
       setLoading(false);
@@ -149,81 +136,65 @@ const Auth = () => {
       >
         <div className="auth-header">
           <div className="auth-icon">
-            <Twitter size={28} />
+            <Twitter size={28} fill="white" />
           </div>
-          <h1>{isLogin ? 'Sign In' : 'Create Account'}</h1>
-          {twitterUsername && (
-            <p className="twitter-info">Continue as @{twitterUsername}</p>
-          )}
+          <h1>Connect Account</h1>
+          <p className="twitter-info">
+             Link your X account to reveal your 2025 Wrapped.
+          </p>
         </div>
 
+        {error && (
+            <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="error-banner"
+                style={{
+                  background: 'rgba(244, 33, 46, 0.1)',
+                  border: '1px solid rgba(244, 33, 46, 0.3)',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  gap: '10px',
+                  alignItems: 'start',
+                  color: '#f4212e', // Twitter red
+                  fontSize: '0.9rem'
+                }}
+            >
+                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>{error}</span>
+            </motion.div>
+        )}
+
         <motion.button
-          className="google-button"
-          onClick={handleGoogleSignIn}
+          className="submit-btn" // Re-using styling but black/white twitter style
+          style={{ 
+             background: '#fff', 
+             color: '#000',
+             height: '56px',
+             fontSize: '1.1rem',
+             gap: '12px'
+          }}
+          onClick={handleTwitterSignIn}
           disabled={loading}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
-          Continue with Google
+          {loading ? (
+            <Loader2 size={24} className="spinner" />
+          ) : (
+            <>
+               <Twitter size={24} fill="black" />
+               Sign in with X
+            </>
+          )}
         </motion.button>
-
-        <div className="divider">
-          <span>or</span>
-        </div>
-
-        <form className="auth-form" onSubmit={handleEmailAuth}>
-          <div className="input-group">
-            <Mail size={18} className="input-icon" />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="input-group">
-            <Lock size={18} className="input-icon" />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-          </div>
-
-          {error && <p className="error-text">{error}</p>}
-
-          <motion.button
-            type="submit"
-            className="submit-btn"
-            disabled={loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {loading ? (
-              <Loader2 size={20} className="spinner" />
-            ) : (
-              isLogin ? 'Sign In' : 'Create Account'
-            )}
-          </motion.button>
-        </form>
-
-        <p className="auth-switch">
-          {isLogin ? "Don't have an account?" : 'Already have an account?'}
-          <button onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? 'Sign Up' : 'Sign In'}
-          </button>
+        
+        <p className="auth-switch" style={{ marginTop: '30px', fontSize: '0.8rem', opacity: 0.6 }}>
+           By continuing, you agree to allow us to view your public profile information.
         </p>
+
       </motion.div>
     </div>
   );

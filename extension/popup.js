@@ -123,47 +123,43 @@ loginBtn.addEventListener('click', () => {
 });
 
 syncBtn.addEventListener('click', async () => {
-  if (!currentUsername) {
-      showError('Please set your Twitter username in the web app first.');
-      return;
-  }
+  // If no username, we will try to auto-detect it in content script
+  const targetUsername = currentUsername || null;
   
-  console.log('Sync button clicked, target:', currentUsername);
-  showSyncingState('Initializing scraping...');
+  console.log('Sync button clicked, target:', targetUsername);
+  showSyncingState('Initializing... (Auto-detecting user)');
   
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    if (!tab.url.includes('twitter.com') && !tab.url.includes('x.com')) {
-         // Open Twitter if not open
-         const newTab = await chrome.tabs.create({ url: `https://twitter.com/${currentUsername}` });
+    // If we're not on Twitter, open it
+    const isTwitter = tab.url && (tab.url.includes('twitter.com') || tab.url.includes('x.com'));
+    
+    if (!isTwitter) {
+         // If we don't know the username, just go to home
+         const url = targetUsername ? `https://twitter.com/${targetUsername}` : 'https://twitter.com/home';
+         const newTab = await chrome.tabs.create({ url });
          
-         // Wait for load? The content script will handle START_SCRAPE but we need to send it after load.
-         // Better: just set storage flag and let content script auto-start if we were able to inject it
-         // But content script only runs on matches. 
-         
-         // Let's send message to the new tab after a delay?
-         // Reliable way: Check chrome.runtime.lastError in a loop
-         showError('Opened Twitter. Please click Sync again when the page loads.');
+         // In a real scenario, we can't easily wait for load here without background script help or simple delay
+         showError('Opened Twitter. Please wait for it to load, then click Sync again.');
          return; 
     }
     
     // Send START_SCRAPE message
-    chrome.tabs.sendMessage(tab.id, { 
+    const message = { 
         action: 'START_SCRAPE', 
-        username: currentUsername 
-    }, (response) => {
+        username: targetUsername 
+    };
+    
+    chrome.tabs.sendMessage(tab.id, message, (response) => {
         if (chrome.runtime.lastError) {
-             // Try injecting
+             // Inject if needed
              chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 files: ['content.js']
              }).then(() => {
                  setTimeout(() => {
-                    chrome.tabs.sendMessage(tab.id, { 
-                        action: 'START_SCRAPE', 
-                        username: currentUsername 
-                    });
+                    chrome.tabs.sendMessage(tab.id, message);
                     monitorProgress();
                  }, 500);
              });

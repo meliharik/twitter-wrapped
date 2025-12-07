@@ -356,18 +356,49 @@ function parseMetricValue(str) {
     return isNaN(val) ? 0 : Math.round(val * multiplier);
 }
 
+// Helper to detect own username from sidebar
+function detectUsername() {
+   // Desktop Sidebar Profile Link
+   const profileLink = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]');
+   if (profileLink) {
+       const href = profileLink.getAttribute('href');
+       if (href) return href.replace('/', '');
+   }
+   return null;
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'START_SCRAPE') {
-    const username = request.username;
+    let username = request.username;
+    
+    // Auto-detect if missing
+    if (!username) {
+        username = detectUsername();
+        if (!username) {
+             alert('Could not auto-detect username. Please ensure you are logged into Twitter.');
+             return;
+        }
+        console.log('[Twitter Wrapped] Auto-detected username:', username);
+    }
+    
     StateManager.set({
       isActive: true, step: 'TWEETS', username: username,
       data: { tweets2025: [], tweets2024: [] }
     }).then(() => {
-        if (!window.location.href.includes(username)) window.location.href = `https://twitter.com/${username}`;
-        else init();
+        // If we extracted the username, we might already be on the page or not.
+        // If we are not on the profile page, go there.
+        if (!window.location.href.includes(username)) {
+            window.location.href = `https://twitter.com/${username}`;
+        } else {
+            init();
+        }
     });
   }
 });
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+if (document.readyState === 'loading') {
+    // If we're already active, init. But detecting username is usually done via message trigger.
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

@@ -93,28 +93,37 @@ const Landing = () => {
                Connect your account to visualize your impact, engagement, and top moments of 2025. Secure, client-side, and beautiful.
             </motion.p>
 
-            <motion.form 
+            <motion.div 
                 id="input-section"
-                onSubmit={handleSubmit}
-                className={`hero-input-group ${isFocused ? 'focused' : ''}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
+                style={{ marginTop: '20px' }}
             >
-                <div className="input-icon">@</div>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder="username"
-                  className="hero-input"
-                />
-                <button type="submit" className="hero-submit-btn">
-                    <ArrowRight size={20} />
+                <button 
+                  onClick={() => navigate('/auth')}
+                  className="landing-hero-cta"
+                  style={{
+                    background: 'white',
+                    color: 'black',
+                    padding: '16px 32px',
+                    borderRadius: '99px',
+                    fontSize: '1.1rem',
+                    fontWeight: '700',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                    <Twitter fill="black" size={24} />
+                    Connect with X
                 </button>
-            </motion.form>
+            </motion.div>
             
             <motion.div 
                className="hero-trust"
@@ -122,7 +131,7 @@ const Landing = () => {
                animate={{ opacity: 1 }}
                transition={{ delay: 0.7 }}
             >
-               <Shield size={14} /> NO Password Required • Local Processing
+               <Shield size={14} /> Official Twitter Login • Local Processing
             </motion.div>
         </div>
 
@@ -149,8 +158,8 @@ const Landing = () => {
             <div className="steps-container">
                <div className="step-item">
                   <span className="step-number">1</span>
-                  <h4>Enter Username</h4>
-                  <p>We just need your handle to identify the profile.</p>
+                  <h4>Connect X</h4>
+                  <p>Securely log in with your Twitter account to verify ownership.</p>
                </div>
                <div className="step-line"></div>
                <div className="step-item">

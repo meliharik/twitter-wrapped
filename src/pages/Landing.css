@@ -108,7 +108,8 @@
 }
 
 /* Input */
-.hero-input-group {
+/* Input */
+.landing-hero-input-group {
   display: flex;
   align-items: center;
   background: rgba(255,255,255,0.03);
@@ -117,21 +118,22 @@
   padding: 8px 16px;
   width: 100%;
   max-width: 420px;
-  gap: 12px; /* Restored gap for safety */
+  gap: 12px;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
 
-.input-icon {
+.landing-input-icon {
   color: var(--color-text-muted);
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px; /* Fix shrinking */
+  min-width: 24px;
+  position: static; /* Force static to override any bleed */
 }
 
-.hero-input {
+.landing-hero-input {
   background: transparent;
   border: none;
   color: white;
@@ -139,16 +141,15 @@
   flex: 1;
   padding: 12px 0;
   outline: none;
-  min-width: 0; /* Flex fix */
+  min-width: 0;
 }
-/* ... */
 
 
-.hero-input::placeholder {
+.landing-hero-input::placeholder {
   color: var(--color-text-muted);
 }
 
-.hero-submit-btn {
+.landing-hero-submit-btn {
   background: white;
   color: black;
   width: 44px;
@@ -158,9 +159,10 @@
   align-items: center;
   justify-content: center;
   transition: transform 0.2s;
+  cursor: pointer;
 }
 
-.hero-submit-btn:hover {
+.landing-hero-submit-btn:hover {
   transform: scale(1.05);
 }
 

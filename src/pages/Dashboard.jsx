@@ -27,8 +27,6 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [wrappedViewed, setWrappedViewed] = useState(false);
-  const [showUsernameModal, setShowUsernameModal] = useState(false);
-  const [newUsername, setNewUsername] = useState('');
   
   const navigate = useNavigate();
 
@@ -52,11 +50,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
-    if (!authLoading && user) {
-        if (!userData?.twitterUsername && !localStorage.getItem('tw_username')) {
-            setShowUsernameModal(true);
-        }
-    }
+    // Removed username modal check logic
     loadStatsFromExtension();
     window.postMessage({ type: 'REQUEST_EXTENSION_DATA' }, '*');
     const handleExtensionData = (event) => {
@@ -85,14 +79,6 @@ const Dashboard = () => {
     loadStatsFromExtension();
   };
 
-  const saveUsername = async (e) => {
-      e.preventDefault();
-      const clean = newUsername.replace('@', '').trim();
-      if (clean) {
-          await updateUserData({ twitterUsername: clean });
-          setShowUsernameModal(false);
-      }
-  };
 
   if (authLoading || loading) {
     return (
@@ -139,24 +125,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-page">
       <AnimatedBackground variant="galaxy" />
-      <AnimatePresence>
-        {showUsernameModal && (
-            <motion.div className="modal-overlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-                <motion.div className="modal-content" initial={{scale:0.9}} animate={{scale:1}}>
-                    <Twitter size={40} className="modal-icon" />
-                    <h2>One last thing!</h2>
-                    <p>What is your Twitter username?</p>
-                    <form onSubmit={saveUsername} className="modal-form">
-                        <div className="modal-input-wrapper">
-                            <span>@</span>
-                            <input type="text" value={newUsername} onChange={(e)=>setNewUsername(e.target.value)} autoFocus/>
-                        </div>
-                        <button type="submit" className="modal-submit-btn" disabled={!newUsername}>Save & Continue <ArrowRight size={18}/></button>
-                    </form>
-                </motion.div>
-            </motion.div>
-        )}
-      </AnimatePresence>
+
       
       <header className="dashboard-header">
         <div className="header-left">
