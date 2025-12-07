@@ -1,0 +1,217 @@
+/* Wrapped.css - Shadcn Inspired Minimal Theme + Glassmorphism */
+
+:root {
+  --color-bg-dark: #000000;
+  --color-text-primary: #ffffff;
+  --color-text-muted: #8899a6;
+  --color-bg-card: rgba(255, 255, 255, 0.05);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-full: 9999px;
+}
+
+.wrapped-app {
+  height: 100vh;
+  width: 100vw;
+  background: #000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-display);
+}
+
+/* Background Anim */
+.wrapped-background-anim {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(29, 155, 240, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(249, 24, 128, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(0, 186, 124, 0.1) 0%, transparent 50%);
+  z-index: 1;
+  pointer-events: none;
+  animation: pulseGradient 12s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGradient {
+  0% { transform: scale(1); filter: hue-rotate(0deg); }
+  100% { transform: scale(1.1); filter: hue-rotate(20deg); }
+}
+
+/* Global Glass Class */
+.metrics-card, .tweet-card, .summary-card, .quiz-btn {
+  background: rgba(22, 22, 22, 0.6); /* Semi-transparent black base */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); 
+}
+
+/* Layout */
+.main-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.slide-container {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  justify-content: center;
+}
+
+.slide-layout {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  text-align: center;
+}
+
+.slide-header h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.slide-header p {
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+}
+
+/* Specific Card Styles */
+.metrics-card {
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.metric-value {
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, white 0%, #ccc 100%);
+  -webkit-background-clip: text;
+  background-clip: text; /* standard property for compat */
+  -webkit-text-fill-color: transparent;
+}
+
+.metric-label {
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
+.metric-sub {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+}
+.metric-sub.pos { color: #00ba7c; background: rgba(0, 186, 124, 0.15); }
+.metric-sub.neg { color: #f91880; background: rgba(249, 24, 128, 0.15); }
+.metric-sub-text { font-size: 1.2rem; margin-top: 8px; font-weight: 500; color: #fff; }
+
+/* Tweet Card */
+.tweet-card {
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: left;
+}
+
+.tweet-body {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  white-space: pre-wrap;
+  font-weight: 500;
+}
+
+.tweet-footer {
+  display: flex; gap: 16px; color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border); padding-top: 16px;
+}
+
+/* Quiz */
+.quiz-grid { display: flex; flex-direction: column; gap: 12px; }
+.quiz-btn {
+  padding: 16px 24px;
+  border-radius: var(--radius-md);
+  text-align: left;
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%;
+  color: white;
+  transition: all 0.2s;
+}
+.quiz-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.02); }
+.quiz-btn.correct { border-color: #00ba7c; background: rgba(0, 186, 124, 0.2); }
+.quiz-btn.wrong { border-color: #f91880; background: rgba(249, 24, 128, 0.2); }
+.quiz-btn.dimmed { opacity: 0.3; }
+
+/* Summary */
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.summary-card { padding: 24px; gap: 8px; border-radius: var(--radius-md); }
+.sc-header { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); font-size: 0.9rem; font-weight: 600; }
+.sc-value { font-size: 1.8rem; font-weight: 800; }
+
+.action-row { display: flex; gap: 16px; margin-top: 24px; }
+.btn-primary, .btn-secondary {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px; border-radius: var(--radius-full);
+  font-weight: 700; transition: transform 0.1s;
+  cursor: pointer; border: none;
+}
+.btn-secondary:hover { opacity: 0.9; }
+.btn-text { background: none; border: none; color: #666; width: 100%; margin-top: 20px; cursor: pointer; }
+
+/* Footer */
+.navigation-footer {
+  padding: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 20; position: relative;
+}
+.nav-btn { background: transparent; border: none; color: #666; font-weight: 600; cursor: pointer; padding: 8px 16px; }
+.nav-btn.primary { background: white; color: black; border-radius: 20px; padding: 8px 24px; }
+.slide-indicator { color: #444; font-weight: 600; }
+.progress-track { background: rgba(255,255,255,0.1); width: 100%; height: 4px; }
+.progress-fill { background: white; height: 100%; transition: width 0.3s; }
+
+/* Intro */
+.wrapped-intro {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; width: 100vw;
+  background: black;
+  position: fixed; top: 0; left: 0; z-index: 50;
+}
+.intro-title { font-size: 3.5rem; font-weight: 900; margin-bottom: 8px; }
+.intro-subtitle { color: #888; font-size: 1.2rem; }
+.wrapped-loading { height: 100vh; display: flex; align-items: center; justify-content: center; }
+.loading-dots .dot { background: #1d9bf0; width: 12px; height: 12px; margin: 0 4px; border-radius: 50%; animation: bounce 0.6s infinite alternate; }
+.dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { to { transform: translateY(-10px); opacity: 0.5; } }
+.confetti { position: absolute; width:10px; height:10px; border-radius:4px; z-index:0; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+@media (max-width: 600px) {
+  .metric-value { font-size: 3.5rem; }
+  .intro-title { font-size: 2.5rem; }
+}

@@ -1,0 +1,253 @@
+/* popup.css - Twitter Wrapped Extension */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #000000;
+  color: #e7e9ea;
+  min-width: 320px;
+}
+
+.popup-container {
+  padding: 20px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #1d9bf0, #00bcd4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.popup-header h1 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.section {
+  animation: fadeIn 0.3s ease;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Login Section */
+.info-text {
+  color: #71767b;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn.primary {
+  background: #1d9bf0;
+  color: white;
+}
+
+.btn.primary:hover {
+  background: #1a8cd8;
+}
+
+.btn.secondary {
+  background: transparent;
+  color: #1d9bf0;
+  border: 1px solid #1d9bf0;
+  margin-top: 12px;
+}
+
+.btn.secondary:hover {
+  background: rgba(29, 155, 240, 0.1);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: #71767b;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.btn.ghost:hover {
+  color: #e7e9ea;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #1d9bf0, #00bcd4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.twitter-handle {
+  color: #71767b;
+  font-size: 13px;
+}
+
+/* Sync Status */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #71767b;
+}
+
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ba7c;
+}
+
+.last-sync {
+  text-align: center;
+  font-size: 12px;
+  color: #536471;
+  margin-top: 12px;
+}
+
+/* Syncing Section */
+.syncing-animation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: #1d9bf0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.syncing-text {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.syncing-detail {
+  text-align: center;
+  font-size: 13px;
+  color: #71767b;
+}
+
+/* Success Section */
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: #00ba7c;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 16px;
+}
+
+#success-section h2 {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+#success-section p {
+  text-align: center;
+  color: #71767b;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Footer */
+.popup-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+
+.popup-footer a {
+  color: #71767b;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.popup-footer a:hover {
+  color: #1d9bf0;
+}
