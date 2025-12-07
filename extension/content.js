@@ -108,12 +108,21 @@ async function scrapeTweets(state) {
   } catch(e) {}
 
   const scrapedData = await scrollAndCollect('TWEETS', (article) => {
-    // ... (rest is same, but I need to preserve it)
-    // To minimize replacement size, I will just return the gathered data + logic
+    // Detect Pinned Status (Crucial to prevent early stop)
+    const socialContext = article.querySelector('[data-testid="socialContext"]');
+    const isPinned = socialContext?.innerText.includes('Pinned');
     
     // Exclude Retweets
-    const socialContext = article.querySelector('[data-testid="socialContext"]');
-    if (socialContext && (socialContext.innerText.includes('Retweeted') || socialContext.innerText.includes('Retweet'))) return null;
+    if (socialContext && (
+        socialContext.innerText.includes('Retweeted') || 
+        socialContext.innerText.includes('Retweet') || 
+        socialContext.innerText.includes('Retweetledi') ||
+        socialContext.innerText.includes('repost')
+    )) return null;
+
+    // Strict Author Check: The tweet MUST be by the user
+    const headerText = article.querySelector('div[data-testid="User-Name"]')?.innerText || '';
+    if (!headerText.includes('@' + state.username)) return null;
 
     const timeEl = article.querySelector('time');
     if (!timeEl) return null;
@@ -122,10 +131,14 @@ async function scrapeTweets(state) {
     const year = date.getFullYear();
     
     if (!YEARS.includes(year)) {
+        // If it's a Pinned tweet from an old year, just skip it, DON'T STOP.
+        if (isPinned) return null;
+        // Otherwise, we reached old tweets. STOP.
         if (year < 2024) return 'STOP';
         return null;
     }
 
+    // Improved Parsing
     const likes = parseCount(article.querySelector('[data-testid="like"]'));
     const retweets = parseCount(article.querySelector('[data-testid="retweet"]'));
     
@@ -133,8 +146,12 @@ async function scrapeTweets(state) {
     const analyticsLink = article.querySelector('a[href*="/analytics"]');
     if (analyticsLink) views = parseCount(analyticsLink);
     else {
+        // Fallback for views (sometimes in group)
         const groups = article.querySelectorAll('[role="group"] div[dir="ltr"]');
-        if (groups.length >= 4) views = parseCount(groups[3]);
+        if (groups.length > 0) {
+             const lastGroup = groups[groups.length - 1]; // Often the last one is views
+             views = parseCount(lastGroup);
+        }
     }
 
     const text = article.querySelector('[data-testid="tweetText"]')?.innerText || '';
@@ -171,70 +188,42 @@ async function scrapeTweets(state) {
 }
 
 async function scrapeReplies(state) {
-  console.log('Scraping Replies (2024-2025)...');
-  if (!window.location.pathname.includes('/with_replies')) {
-     window.location.href = `https://twitter.com/${state.username}/with_replies`;
-     return;
-  }
+  console.log('Scraping Replies...');
 
   const scrapedData = await scrollAndCollect('REPLIES', (article) => {
-    const timeEl = article.querySelector('time');
-    if (!timeEl) return null;
-    const date = new Date(timeEl.getAttribute('datetime'));
-    const year = date.getFullYear();
-    
-    if (!YEARS.includes(year)) {
-        if (year < 2024) return 'STOP';
-        return null; 
-    }
-    
-    return { year }; 
+      const timeEl = article.querySelector('time');
+      if (!timeEl) return null;
+      const date = new Date(timeEl.getAttribute('datetime'));
+      const year = date.getFullYear();
+      
+      if (!YEARS.includes(year)) {
+          if (year < 2024) return 'STOP';
+          return null;
+      }
+      return { year };
   });
 
   const replies2025 = scrapedData.items.filter(r => r.year === 2025).length;
   const replies2024 = scrapedData.items.filter(r => r.year === 2024).length;
 
-  // Process Stats for Comparison
-  const processStats = (tweets, replyCount) => {
-      const totalLikes = tweets.reduce((acc, t) => acc + (t.likes || 0), 0);
-      const totalRetweets = tweets.reduce((acc, t) => acc + (t.retweets || 0), 0);
-      const totalViews = tweets.reduce((acc, t) => acc + (t.views || 0), 0);
-      const topTweet = [...tweets].sort((a, b) => b.likes - a.likes)[0];
-      
-      // Fix Engagement: (Total Interactions / Total Views) * 100
-      // Interactions = Likes + RTs + Replies
-      const interactions = totalLikes + totalRetweets + replyCount;
-      
-      // Fallback if views are missing (e.g. older tweets or scraping error)
-      // Assume ~50 views per interaction or 100 per tweet if views are 0 to avoid 0%
-      let effectiveViews = totalViews;
-      if (effectiveViews === 0 && tweetCount > 0) {
-          effectiveViews = interactions > 0 ? interactions * 50 : tweetCount * 100;
-      }
-
-      const engagementRate = effectiveViews > 0 ? (interactions / effectiveViews) * 100 : 0;
-
-      return {
-          tweetCount: tweets.length,
-          replyCount,
-          totalLikes,
-          totalRetweets,
-          totalViews: totalViews || effectiveViews, // Use effective for display if real is 0? No, keep real 0 but rate calculated? Maybe.
-          // Let's keep totalViews real, but rate estimated.
-          engagementRate,
-          topTweet
-      };
-  };
+  console.log(`Replies: 2025=${replies2025}, 2024=${replies2024}`);
 
   const stats2025 = processStats(state.data.tweets2025 || [], replies2025);
   const stats2024 = processStats(state.data.tweets2024 || [], replies2024);
 
+  // Attempt to grab display name from valid sources
+  const displayNameEl = document.querySelector('div[data-testid="UserName"] span > span') || 
+                        document.querySelector('div[data-testid="User-Name"] span > span');
+  const displayName = displayNameEl ? displayNameEl.innerText : state.username;
+  
   const finalData = { 
     joinedDate: state.data.joinedDate,
-    profilePic: state.data.profilePic, // Added
+    profilePic: state.data.profilePic, 
+    username: state.username, // Explicitly save handle
+    displayName: displayName, // Explicitly save display name
     current: stats2025,
     previous: stats2024,
-    tweets: state.data.tweets2025 // Backward compat for Quiz
+    tweets: state.data.tweets2025 
   };
   
   await StateManager.update({
@@ -245,7 +234,7 @@ async function scrapeReplies(state) {
 
   await chrome.storage.local.set({ latestStats: finalData, lastSync: new Date().toISOString() });
   console.log('ALL DONE!', finalData);
-  alert('Scraping Completed! 2024 vs 2025 Data Ready.');
+  alert('Process Complete!\n\nPlease go back to the website and REFRESH the page to see your Wrapped.');
   chrome.runtime.sendMessage({ action: 'SCRAPING_COMPLETE', data: finalData });
 }
 
@@ -324,6 +313,49 @@ async function scrollAndCollect(type, validationFn) {
   }
   return { items, count };
 }
+
+// Process Stats Helper
+const processStats = (tweets, replyCount) => {
+  const totalLikes = tweets.reduce((acc, t) => acc + (t.likes || 0), 0);
+  const totalRetweets = tweets.reduce((acc, t) => acc + (t.retweets || 0), 0);
+  const totalViews = tweets.reduce((acc, t) => acc + (t.views || 0), 0);
+  
+  // Find top tweet
+  const topTweet = [...tweets].sort((a, b) => b.likes - a.likes)[0];
+  
+  // Engagement: Total Interactions
+  // Interactions = Likes + RTs + Replies
+  const interactions = totalLikes + totalRetweets + replyCount;
+  
+  // Effective view count (fallback logic)
+  let effectiveViews = totalViews;
+  const tweetCount = tweets.length;
+  if (effectiveViews === 0 && tweetCount > 0) {
+      effectiveViews = interactions > 0 ? interactions * 50 : tweetCount * 100;
+  }
+
+  const engagementRate = effectiveViews > 0 ? (interactions / effectiveViews) * 100 : 0;
+
+  return {
+      tweetCount,
+      replyCount,
+      totalLikes,
+      totalRetweets,
+      totalViews: totalViews || effectiveViews, // Use effective if 0?
+      // Actually let's keep totalViews real for display accuracy, 
+      // but the engagementRate logic is preserved for backward compatibility
+      // The frontend now prefers 'interactions' raw number anyway.
+      engagementRate,
+      topTweet: topTweet ? {
+          text: topTweet.text,
+          likes: topTweet.likes,
+          retweets: topTweet.retweets,
+          views: topTweet.views || 0,
+          date: topTweet.date,
+          id: topTweet.id
+      } : null
+  };
+};
 
 function extractTweetId(article) {
   const link = article.querySelector('a[href*="/status/"]');

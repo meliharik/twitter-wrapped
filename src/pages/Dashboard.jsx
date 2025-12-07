@@ -52,19 +52,28 @@ const Dashboard = () => {
     if (!authLoading && !user) navigate('/auth');
     // Removed username modal check logic
     loadStatsFromExtension();
-    window.postMessage({ type: 'REQUEST_EXTENSION_DATA' }, '*');
+    loadStatsFromExtension();
     const handleExtensionData = (event) => {
       if (event.detail?.latestStats) {
         const data = event.detail.latestStats;
         const current = data.current || data;
         if (data.profilePic) current.profilePic = data.profilePic;
         setStats(current);
+        localStorage.setItem('tw_latestStats', JSON.stringify(data));
       }
     };
+
+    // Load from LocalStorage
+    const loadData = () => {
+         loadStatsFromExtension();
+    };
+
     window.addEventListener('extensionDataReady', handleExtensionData);
+    if (!stats) loadData();
+    
     setTimeout(() => setLoading(false), 500);
     return () => window.removeEventListener('extensionDataReady', handleExtensionData);
-  }, [user, authLoading, navigate, loadStatsFromExtension, userData]);
+  }, [user, authLoading, navigate, loadStatsFromExtension]);
 
   const handleLogout = async () => {
     localStorage.clear();
@@ -213,7 +222,7 @@ const Dashboard = () => {
                     </div>
                     <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
                         <Repeat size={18} color="#00ba7c"/> 
-                        <span>{stats.topTweet.likes.toLocaleString()}</span> {/* Using likes as proxy if RT missing or just standard */}
+                        <span>{(stats.topTweet.retweets || 0).toLocaleString()}</span>
                     </div>
                     <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
                         <Eye size={18} color="#1d9bf0"/> 
