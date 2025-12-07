@@ -356,7 +356,7 @@ const Wrapped = () => {
 
            const lineHeight = 75; // Increased line height
            const textBlockHeight = lines.length * lineHeight;
-           const headerHeight = 140;
+           const headerHeight = 200; // Increased to 200 for more spacing
            const footerHeight = 120;
            const padding = 80;
            const dynamicH = headerHeight + textBlockHeight + footerHeight + padding;
@@ -572,48 +572,69 @@ const Wrapped = () => {
               </div>
           );
           case 'summary': return (
-              <div className="summary-slide" style={{height:'100%', overflowY:'auto', paddingTop:'80px', paddingBottom:'100px'}}>
-                  <h2>Your 2025 Summary</h2>
-                  <p>Choose a style & Share</p>
+              <div className="summary-slide" style={{height:'100%', width:'100%', position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000'}}>
+                  
+                  {/* Close / Dashboard */}
+                  <button onClick={()=>navigate('/dashboard')} style={{
+                      position:'absolute', top:'20px', right:'20px', zIndex:10,
+                      background:'rgba(255,255,255,0.2)', color:'white', border:'none',
+                      borderRadius:'50%', width:'40px', height:'40px', cursor:'pointer',
+                      display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(5px)'
+                  }}>
+                      <div style={{fontSize:'20px'}}>✕</div>
+                  </button>
 
-                  {/* Theme Selector */}
-                  <div className="theme-selector" style={{display:'flex', gap:'12px', justifyContent:'center', margin:'20px 0'}}>
-                      {Object.keys(THEMES).map(t => (
-                          <button key={t}
-                                  onClick={() => setTheme(t)}
-                                  className={`theme-btn ${theme === t ? 'active' : ''}`}
-                                  style={{
-                                      width:40, height:40, borderRadius:'50%',
-                                      background: `linear-gradient(45deg, ${THEMES[t].bg1}, ${THEMES[t].bg2})`,
-                                      border: theme === t ? '3px solid #fff' : '2px solid rgba(255,255,255,0.3)',
-                                      cursor:'pointer'
-                                  }}
-                          />
-                      ))}
-                  </div>
-
-                  {/* Preview Image */}
-                  <div className="preview-container" style={{display:'flex', justifyContent:'center', marginBottom:'20px'}}>
+                  {/* Preview Hero */}
+                  <div className="preview-container" style={{
+                      flex: 1, width:'100%', minHeight: 0, display:'flex', alignItems:'center', justifyContent:'center', 
+                      position:'relative', zIndex:1, padding:'40px 20px'
+                  }}>
                       {previewUrl ? (
-                          <img src={previewUrl} alt="Preview" style={{
-                              width:'300px', height:'auto', borderRadius:'16px',
-                              boxShadow:'0 10px 40px rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.1)'
-                          }}/>
-                      ) : <div style={{width:300, height:500, background:'#111', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center'}}>Loading Preview...</div>}
+                          <motion.img 
+                              initial={{ opacity:0, scale: 0.9 }} animate={{ opacity:1, scale:1 }}
+                              src={previewUrl} alt="Preview" 
+                              style={{
+                                  maxHeight:'100%', maxWidth:'100%', 
+                                  height:'auto', width:'auto',
+                                  borderRadius:'20px', 
+                                  boxShadow:'0 20px 60px rgba(0,0,0,0.5)', 
+                                  border:'1px solid rgba(255,255,255,0.1)'
+                              }}
+                          />
+                      ) : (
+                          <div className="loading-dots"><div className="dot"></div></div>
+                      )}
                   </div>
 
-                  <div className="action-buttons" style={{display:'flex', gap:'10px', justifyContent:'center'}}>
-                      <motion.button className="share-btn" onClick={() => generateShareImage(false)}
-                          whileHover={{scale:1.05}} whileTap={{scale:0.95}} style={{background:'white', color:'black', padding:'12px 24px', borderRadius:'24px', border:'none', fontWeight:'bold', display:'flex', alignItems:'center', gap:'8px'}}>
-                          <Download size={20}/> Download Image
-                      </motion.button>
-                      <motion.button className="share-btn twitter" onClick={shareToTwitter}
-                          whileHover={{scale:1.05}} whileTap={{scale:0.95}} style={{background:'#1D9BF0', color:'white', padding:'12px 24px', borderRadius:'24px', border:'none', fontWeight:'bold', display:'flex', alignItems:'center', gap:'8px'}}>
-                          <Twitter size={20}/> Share Link
-                      </motion.button>
+                  {/* Buttons - In Flow (Not Absolute) */}
+                  <div style={{
+                      width: '100%', display:'flex', justifyContent:'center',
+                      paddingBottom: '120px', // Clear the footer
+                      zIndex: 5
+                  }}>
+                      <div className="action-buttons" style={{display:'flex', gap:'16px', width:'100%', maxWidth:'400px', padding:'0 20px'}}>
+                          <motion.button className="share-btn" onClick={() => generateShareImage(false)}
+                              whileHover={{scale:1.02}} whileTap={{scale:0.95}} 
+                              style={{
+                                  flex:1, background:'rgba(255,255,255,0.1)', color:'white', 
+                                  padding:'16px', borderRadius:'16px', border:'1px solid rgba(255,255,255,0.2)', 
+                                  fontSize:'16px', fontWeight:'bold', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', backdropFilter:'blur(10px)'
+                              }}>
+                              <Download size={20}/> Download
+                          </motion.button>
+                          
+                          <motion.button className="share-btn twitter" onClick={shareToTwitter}
+                              whileHover={{scale:1.02}} whileTap={{scale:0.95}} 
+                              style={{
+                                  flex:1, background:'#1D9BF0', color:'white', 
+                                  padding:'16px', borderRadius:'16px', border:'none', 
+                                  fontSize:'16px', fontWeight:'bold', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px',
+                                  boxShadow:'0 4px 15px rgba(29, 155, 240, 0.4)'
+                              }}>
+                              <Twitter size={20}/> Share
+                          </motion.button>
+                      </div>
                   </div>
-
-                  <button onClick={()=>navigate('/dashboard')} style={{background:'transparent', border:'none', color:'#666', marginTop:'20px', textDecoration:'underline', cursor:'pointer'}}>Back to Dashboard</button>
               </div>
           );
           default: return null;
